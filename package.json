@@ -1,0 +1,31 @@
+{
+  "name": "qa-automation-turinng",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "npx cucumber-js",
+    "test:ui": "npx cucumber-js features/ui",
+    "test:api": "npx cucumber-js features/api",
+    "test:login": "npx cucumber-js features/ui/login.feature",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "report": "start reports/cucumber-report.html"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@playwright/test": "^1.57.0",
+    "@types/node": "^24.10.1",
+    "cucumber-html-reporter": "^7.2.0",
+    "eslint": "^9.39.1",
+    "eslint-plugin-playwright": "^2.3.0",
+    "prettier": "^3.6.2"
+  },
+  "dependencies": {
+    "@cucumber/cucumber": "^12.2.0",
+    "dotenv": "^17.2.3"
+  }
+}

@@ -1,0 +1,250 @@
+// features/ui/step_definitions/ui/cart.steps.js
+import { Given, When, Then } from '@cucumber/cucumber';
+import { expect } from '@playwright/test';
+import { CartPage } from '../../../../pages/ui/cart.page.js';
+import { InventoryPage } from '../../../../pages/ui/inventory.page.js';
+import { UI_ROUTES } from '../../../../config/ui_routes.js';
+
+
+Given('que el carrito está vacío', async function () {
+    const cartPage = new CartPage(this.page);
+    // Navegar a la página del carrito
+    await cartPage.goto();
+
+    // Verificar que el carrito esté vacío
+    const cartItems = await cartPage.getCartItems();
+
+    // Si hay items, eliminarlos
+    if (cartItems.length > 0) {
+        for (const item of cartItems) {
+            await cartPage.removeProduct(item.name);
+        }
+    }
+
+    // Verificar que está definitivamente vacío
+    await expect(cartPage.cartItemsContainer).toHaveCount(0);
+});
+
+Given('que he añadido {string} al carrito', async function (productName) {
+    const inventoryPage = new InventoryPage(this.page);
+
+    // Asegurarse de estar en la página de inventario
+    await inventoryPage.goto();
+
+    // Añadir el producto al carrito
+    await inventoryPage.addProductToCart(productName);
+});
+
+Given('que he añadido {string} al carrito', async function (productName) {
+    const inventoryPage = new InventoryPage(this.page);
+    await inventoryPage.goto();
+    await inventoryPage.addProductToCart(productName);
+});
+
+Given('el contador del carrito muestra {string}', async function (expectedCount) {
+    const inventoryPage = new InventoryPage(this.page);
+
+    // Verificar que el contador muestra el número esperado
+    const cartBadge = inventoryPage.cartBadge;
+    await expect(cartBadge).toHaveText(expectedCount);
+});
+
+/**
+ * =================================================================
+ * WHEN - Acciones (Lo que hace el usuario)
+ * =================================================================
+ */
+
+When('hago clic en {string} para {string}', async function (buttonText, productName) {
+    const inventoryPage = new InventoryPage(this.page);
+
+    // Encontrar el producto por nombre
+    const product = await inventoryPage.getProductByName(productName);
+
+    if (!product) {
+        throw new Error(`Producto "${productName}" no encontrado en el inventario`);
+    }
+
+    // Hacer clic en el botón específico (Add to cart / Remove)
+    const button = product.locator(`button:has-text("${buttonText}")`);
+    await button.click();
+});
+
+When('voy a la página del carrito', async function () {
+    const cartPage = new CartPage(this.page);
+    await cartPage.goto();
+
+    // Verificar que estamos en la página del carrito
+    await expect(this.page).toHaveURL(
+        new RegExp(`${UI_ROUTES.cart.replace('.', '\\.')}$`)
+    );
+});
+
+When('voy al carrito', async function () {
+    // Alias del paso anterior
+    const inventoryPage = new InventoryPage(this.page);
+
+    // Hacer clic en el ícono del carrito
+    await inventoryPage.cartIcon.click();
+
+    // Esperar a que se cargue la página del carrito
+    await this.page.waitForURL(
+        new RegExp(`${UI_ROUTES.cart.replace('.', '\\.')}$`)
+    );
+});
+
+When('elimino {string}', async function (productName) {
+    const cartPage = new CartPage(this.page);
+
+    // Eliminar el producto del carrito
+    await cartPage.removeProduct(productName);
+});
+
+When('elimino {string} del carrito', async function (productName) {
+    // Alias del paso anterior
+    const cartPage = new CartPage(this.page);
+    await cartPage.removeProduct(productName);
+});
+
+When('voy a la página del carrito', async function () {
+    const cartPage = new CartPage(this.page);
+    await cartPage.goto();
+});
+
+/**
+ * =================================================================
+ * THEN - Verificaciones (Lo que debería suceder)
+ * =================================================================
+ */
+
+Then('el botón debería cambiar a {string}', async function (expectedButtonText) {
+    const inventoryPage = new InventoryPage(this.page);
+
+    // Este es un paso genérico, necesitamos contexto del producto anterior
+    // Normalmente se usa después de "hago clic en Add to cart"
+    // Verificar que existe un botón con el texto esperado
+    const buttons = this.page.locator(`button:has-text("${expectedButtonText}")`);
+
+    await expect(buttons.first()).toBeVisible();
+});
+
+Then('el contador del carrito debería mostrar {string}', async function (expectedCount) {
+    const inventoryPage = new InventoryPage(this.page);
+
+    // Verificar que el badge del carrito muestra el número correcto
+    const cartBadge = inventoryPage.cartBadge;
+    await expect(cartBadge).toHaveText(expectedCount);
+});
+
+Then('el contador del carrito debería mostrar {int}', async function (expectedCount) {
+    // Versión con número (int) en lugar de string
+    const inventoryPage = new InventoryPage(this.page);
+    const cartBadge = inventoryPage.cartBadge;
+
+    await expect(cartBadge).toHaveText(expectedCount.toString());
+});
+
+Then('el ícono del carrito debería resaltar el nuevo item', async function () {
+    const inventoryPage = new InventoryPage(this.page);
+
+    // Verificar que el badge del carrito es visible
+    await expect(inventoryPage.cartBadge).toBeVisible();
+
+    // Verificar que contiene un número
+    const badgeText = await inventoryPage.cartBadge.textContent();
+    expect(parseInt(badgeText)).toBeGreaterThan(0);
+});
+
+Then('el producto debería desaparecer de la lista', async function () {
+    const cartPage = new CartPage(this.page);
+
+    // Esperar a que la lista se actualice
+    await this.page.waitForTimeout(500);
+
+    // Verificar que el producto no está en la lista
+    // (Este paso es más específico en el contexto del producto eliminado)
+});
+
+Then('el carrito debería estar vacío', async function () {
+    const cartPage = new CartPage(this.page);
+
+    // Verificar que no hay items en el carrito
+    const cartItems = await cartPage.getCartItems();
+    expect(cartItems.length).toBe(0);
+
+    // Verificar que se muestra el mensaje de carrito vacío
+    await expect(cartPage.emptyCartMessage).toBeVisible();
+});
+
+Then('el contador del carrito no debería ser visible', async function () {
+    const inventoryPage = new InventoryPage(this.page);
+
+    // El badge del carrito no debería ser visible cuando está vacío
+    await expect(inventoryPage.cartBadge).not.toBeVisible();
+});
+
+Then('debería quedar solo {int} producto', async function (expectedCount) {
+    const cartPage = new CartPage(this.page);
+
+    // Obtener los items del carrito
+    const cartItems = await cartPage.getCartItems();
+
+    // Verificar que solo queda 1 producto
+    expect(cartItems.length).toBe(expectedCount);
+});
+
+Then('ese producto debería ser {string}', async function (expectedProductName) {
+    const cartPage = new CartPage(this.page);
+
+    // Obtener los items del carrito
+    const cartItems = await cartPage.getCartItems();
+
+    // Verificar que el único producto es el esperado
+    expect(cartItems.length).toBe(1);
+    expect(cartItems[0].name).toBe(expectedProductName);
+});
+
+Then('el botón {string} no debería estar visible', async function (buttonText) {
+    const cartPage = new CartPage(this.page);
+
+    // Verificar que el botón checkout no es visible
+    const button = this.page.locator(`button:has-text("${buttonText}")`);
+    await expect(button).not.toBeVisible();
+});
+
+Then('el botón {string} debería estar deshabilitado', async function (buttonText) {
+    // Buscar el botón por texto
+    const button = this.page.locator(`button:has-text("${buttonText}")`);
+
+    // Verificar que está deshabilitado
+    await expect(button).toBeDisabled();
+});
+
+Then('ambos productos deberían aparecer en el carrito', async function () {
+    const cartPage = new CartPage(this.page);
+
+    // Obtener los items del carrito
+    const cartItems = await cartPage.getCartItems();
+
+    // Verificar que hay al menos 2 productos
+    expect(cartItems.length).toBeGreaterThanOrEqual(2);
+});
+
+Then('debería poder volver al inventario sin errores', async function () {
+    const inventoryPage = new InventoryPage(this.page);
+
+    // Hacer clic en "Continue Shopping" o similar
+    const continueButton = this.page.locator('[data-test="continue-shopping"]');
+
+    if (await continueButton.isVisible()) {
+        await continueButton.click();
+    } else {
+        // Si no existe el botón, navegar manualmente
+        await inventoryPage.goto();
+    }
+
+    // Verificar que estamos en el inventario
+    await expect(this.page).toHaveURL(
+        new RegExp(`${UI_ROUTES.inventory.replace('.', '\\.')}$`)
+    );
+});

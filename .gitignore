@@ -1,0 +1,42 @@
+# ========================================
+# Environment variables
+# ========================================
+.env
+.env.local
+.env.*.local
+
+# ========================================
+# Node / package managers
+# ========================================
+node_modules/
+package-lock.json
+yarn.lock
+
+# ========================================
+# Reports and test artifacts
+# ========================================
+reports/
+reports/screenshots/
+reports/bugs/
+test-results/
+playwright-report/
+traces/
+screenshots/
+videos/
+
+# Playwright local browsers (optional)
+/playwright/.local-browsers/
+
+# ========================================
+# Playwright auth/cache
+# ========================================
+.auth/
+
+# ========================================
+# System / editor files
+# ========================================
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/
